@@ -1,0 +1,13 @@
+(define (loop? l)
+  (define (_loop? p1 p2)
+    (cond ((not(pair? p1)) #f)
+	  ((not(pair? p2)) #f)
+	  ((not(pair? (cdr p2))) #f)
+	  ((eq? (cdr p1) (cddr p2)) #t)
+	  (else (_loop? (cdr p1) (cddr p2)))))
+  (_loop? l l))
+
+(print (loop? (list 1 2 3)))
+(define ring (list 1 2 3))
+(set-cdr! (cdr (cdr ring)) ring)
+(print (loop? ring))
