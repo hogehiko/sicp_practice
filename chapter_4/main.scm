@@ -260,7 +260,7 @@
   (set-cdr! frame (cons val (cdr frame))))
 
 (define (extend-environment vars vals base-env)
-  (if (= (length vars) (length values))
+  (if (= (length vars) (length vals))
       (cons (make-frame vars vals) base-env)
       (if (< (length vars)(length vals))
           (error "Too many arguments supplied" vars vals)
@@ -299,7 +299,7 @@
     (define (scan vars vals)
       (cond ((null? vars)
              (add-binding-to-frame! var val frame))
-            ((eq? var (var vars))
+            ((eq? var (car vars))
              (set-car! vals val))
             (else (scan (cdr vars)(cdr vals)))))
     (scan (frame-variables frame)
@@ -318,11 +318,11 @@
          (extend-environment (primitive-procedure-names)
                              (primitive-procedure-objects)
                              the-empty-environment)))
-    (define-variable! 'true initial-env)
+    (define-variable! 'true true initial-env)
     (define-variable! 'false false initial-env)
     initial-env))
 
-(define the-global-environment (setup-environment))
+;(define the-global-environment (setup-environment))
 
 (define (primitive-procedure? proc)
   (tagged-list? proc 'primitive))
@@ -373,3 +373,6 @@
                      (procedure-body object)
                      '<procedure-env>))
       (display object)))
+
+(define the-global-environment (setup-environment))
+
