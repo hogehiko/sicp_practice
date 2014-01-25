@@ -1,10 +1,14 @@
 #lang planet neil/sicp
-;4.1 超循環評価器
 
+;(define true #t)
+;(define false #f)
+;4.1 超循環評価器
+(define apply-in-underlying-scheme apply)
 ;4.1.1 評価機の中核
 
 ;eval
 (define (eval exp env)
+  
   (cond ((self-evaluating? exp) exp)
         ((variable? exp) (lookup-variable-value exp env))
         ((quoterd? exp) (text-of-quotation exp))
@@ -19,16 +23,18 @@
          (eval-sequence (begin-actions exp) env))
         ((cond? exp) (eval (cond->if exp) env))
         ((application? exp)
-         (apply (eval (operator exp) env)
+         (apply-e (eval (operator exp) env)
                 (list-of-values (operands exp) env)))
         (else
          (error "Unknown expression type --EVAL" exp))))
 
 ;apply
-(define (apply procedure arguments)
-  (cond ((primitive-procedure? procedure)
+
+(define (apply-e procedure arguments)
+  (cond 
+    ((primitive-procedure? procedure)
          (apply-primitive-procedure procedure arguments))
-        ((compound-procedure? procedure?)
+        ((compound-procedure? procedure)
          (eval-sequence
           (procedure-body procedure)
           (extend-environment
@@ -271,7 +277,9 @@
     (define (scan vars vals)
       (cond ((null? vars)
              (env-loop (enclosing-environment env)))
-            ((eq? var (car var) (cdr vals)))))
+            ((eq? var (car vars))
+             (car vals))
+            (else (scan (cdr vars) (cdr vals)))))
     (if (eq? env the-empty-environment)
         (error "Unbound variable" var)
         (let ((frame (first-frame env)))
@@ -345,9 +353,9 @@
 
 (define (apply-primitive-procedure proc args)
   (apply-in-underlying-scheme
-   (primitive-implementation proc)args))
+   (primitive-implementation proc) args))
 
-(define apply-in-underlying-scheme apply)
+
 
 (define input-prompt ";; M-Eval input:")
 (define output-prompt ";;; M-Eval value:")
@@ -374,5 +382,9 @@
                      '<procedure-env>))
       (display object)))
 
+;起動
 (define the-global-environment (setup-environment))
+(driver-loop)
+;sample (define (append x y) (if (null? x) y (cons (car x)(append (cdr x) y))))
+;sample2 (append '(a b c) '(d e f))
 
