@@ -44,7 +44,7 @@
       (procedure-body procedure)
       (extend-environment
        (procedure-parameters procedure)
-       (list-of-delayed-args arguments env)
+       (list-of-delayed-args arguments env (procedure-parameter-attributes procedure))
        (procedure-environment procedure))))
     (else
      (error
@@ -58,12 +58,28 @@
             (list-of-arg-values (rest-operands exps)
                                 env))))
 
-(define (list-of-delayed-args exps env)
+;(define (list-of-delayed-args exps env)
+;  (if (no-operands? exps)
+;      '()
+;      (cons (delay-it (first-operand exps) env)
+;            (list-of-delayed-args (rest-operands exps)
+;                                  env))))
+;元のprocedure-paremetersと同様
+
+
+(define (list-of-delayed-args exps env attributes)
   (if (no-operands? exps)
       '()
-      (cons (delay-it (first-operand exps) env)
+      (cons ((operand-decorator (first-operand attributes)) (first-operand exps) env)
             (list-of-delayed-args (rest-operands exps)
-                                  env))))
+                                  env
+                                  (rest-operands attributes)))))
+
+(define (operand-decorator attribute)
+  (cond ((eq? attribute 'lazy) delay-it)
+        ((eq? attribute 'lazy-memo) delay-it)
+        (else actual-value)))
+
 
 (define (remove-attrib exp)
   (display exp)
@@ -298,6 +314,13 @@
         (car e)
         e))
   (map remove-attribute (cadr p)))
+
+(define (procedure-parameter-attributes p)
+  (define (get-attrib e)
+    (if (pair? e)
+        (cdr e)
+        'none))
+  (map get-attrib (cadr p)))
 
 (define (procedure-body p) (caddr p ))
 
