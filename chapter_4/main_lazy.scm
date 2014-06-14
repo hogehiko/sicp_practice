@@ -50,6 +50,7 @@
      (error
       "Unknown procedure type -- APPLY" procedure))))
 
+
 (define (list-of-arg-values exps env)
   (if (no-operands? exps)
       '()
@@ -63,6 +64,11 @@
       (cons (delay-it (first-operand exps) env)
             (list-of-delayed-args (rest-operands exps)
                                   env))))
+
+(define (remove-attrib exp)
+  (display exp)
+  (if (pair? exp)
+      (car exp)))
 
 (define (force-it-naive obj)
   (if (thunk? obj)
@@ -285,7 +291,13 @@
 (define (compound-procedure? p)
   (tagged-list? p 'procedure))
 
-(define (procedure-parameters p) (cadr p))
+;(define (procedure-parameters p) (cadr p))
+(define (procedure-parameters p)
+  (define (remove-attribute e)
+    (if (pair? e)
+        (car e)
+        e))
+  (map remove-attribute (cadr p)))
 
 (define (procedure-body p) (caddr p ))
 
@@ -447,3 +459,5 @@
         
 ;(define (fib n)(cond ((= n 0) 0)((= n 1) 1)(else (+ (fib (- n 1)) (fib (- n 2))))))
 ;25
+
+;(define (p1 (x lazy))(+ x 1))
