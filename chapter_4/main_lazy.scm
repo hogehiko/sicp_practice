@@ -77,7 +77,7 @@
 
 (define (operand-decorator attribute)
   (cond ((eq? attribute 'lazy) delay-it)
-        ((eq? attribute 'lazy-memo) delay-it)
+        ((eq? attribute 'lazy-memo) delay-it-memo)
         (else actual-value)))
 
 
@@ -109,13 +109,35 @@
         (else obj)))
 
 ;(define force-it force-it-naive)                 
-(define force-it force-it-memorized)                 
+;(define force-it force-it-memorized)                 
+(define (force-it obj)
+  (cond ((thunk? obj)
+         (actual-value (thunk-exp obj)(thunk-env obj))obj)
+        ((thunk-memo? obj)
+         (let ((result (actual-value
+                        (thunk-exp obj)
+                        (thunk-env obj))))
+           (set-car! obj 'evaluated-thunk)
+           (set-car! (cdr obj) result)
+           (set-cdr! (cdr obj) '())
+           result))
+        ((evaluated-thunk? obj)
+         (thunk-value obj))
+        (else obj)))
 
+        
 (define (delay-it exp env)
   (list 'thunk exp env))
 
+(define (delay-it-memo exp env)
+  (list 'thunk-memo exp env))
+
 (define (thunk? obj)
   (tagged-list? obj 'thunk))
+
+(define (thunk-memo? obj)
+  (tagged-list? obj 'thunk-memo))
+
 
 (define (thunk-exp thunk) (cadr thunk))
 (define (thunk-env thunk) (caddr thunk))
@@ -484,3 +506,5 @@
 ;25
 
 ;(define (p1 (x lazy))(+ x 1))
+;(define (sum3 (x lazy) (y lazy-memo) z)(+ x y z))
+;(define (dn (x lazy) y) 1)
