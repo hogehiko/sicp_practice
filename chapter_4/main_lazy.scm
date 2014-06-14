@@ -73,7 +73,7 @@
 
 (define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
 
-(define (force-it-memolized obj)
+(define (force-it-memorized obj)
   (cond ((thunk? obj)
          (let ((result (actual-value
                         (thunk-exp obj)
