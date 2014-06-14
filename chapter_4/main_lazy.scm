@@ -64,16 +64,16 @@
             (list-of-delayed-args (rest-operands exps)
                                   env))))
 
-;(define (force-it obj)
-;  (if (thunk? obj)
-;      (actual-value (thunk-exp obj)(thunk-env obj))
-;      obj))
+(define (force-it-naive obj)
+  (if (thunk? obj)
+      (actual-value (thunk-exp obj)(thunk-env obj))
+      obj))
 (define (evaluated-thunk? obj)
   (tagged-list? obj 'evaluated-thunk))
 
 (define (thunk-value evaluated-thunk) (cadr evaluated-thunk))
 
-(define (force-it obj)
+(define (force-it-memolized obj)
   (cond ((thunk? obj)
          (let ((result (actual-value
                         (thunk-exp obj)
@@ -85,7 +85,9 @@
         ((evaluated-thunk? obj)
          (thunk-value obj))
         (else obj)))
-                 
+
+;(define force-it force-it-naive)                 
+(define force-it force-it-memorized)                 
 
 (define (delay-it exp env)
   (list 'thunk exp env))
@@ -261,104 +263,12 @@
 
 ;Q4.2 eval内のcondの順番を買え、手続き作用の説が代入の説の前に現れるようにしようと考えた。なにがダメ？
 
-;Q4.3 データ主導流で振り分けできるようにevalを書き直せ。
-(define (make-table)
-  (let ((local-table (list '*table*)))
-    (define (lookup key-1 key-2)
-      (let ((subtable (assoc key-1 (cdr local-table))))
-        (if subtable
-            (let ((record (assoc key-2 (cdr subtable))))
-              (if record 
-                  (cdr record)
-                  false))
-            false)))
-    (define (insert! key-1 key-2 value)
-      (let ((subtable (assoc key-1 (cdr local-table))))
-        (if subtable
-            (let ((record (assoc key-2 (cdr subtable))))
-              (if record
-                  (set-cdr! record value)
-                  (set-cdr! subtable
-                            (cons (cons key-2 value)
-                                  (cdr subtable)))))
-            (set-cdr! local-table
-                      (cons (list key-1
-                                  (cons key-2 value))
-                            (cdr local-table)))))
-      'ok)
-    (define (dispatch m)
-      (cond ((eq? m 'lookup-proc) lookup)
-            ((eq? m 'insert-proc!) insert!)
-            (else (error "Unknown operation --TABLE" m))))
-    dispatch))
 
-(define operation-table (make-table))
-(define get (operation-table 'lookup-proc))
-(define put (operation-table 'insert-proc!))
-
-(define (eval-2 exp env)
-  (let ((proc (get-proc exp)))
-    ((cond ((self-evaluating? exp) exp)
-           ((variable? exp) (lookup-variable-value exp env))
-           ;        ((quoterd? exp) (text-of-quotation exp))
-           ;        ((assignment? exp) (eval-assignment exp env))
-           ;        ((definition? exp) (eval-definition exp env))
-           ;        ((if? exp) (eval-if exp env))
-           ;        ((lambda? exp)
-           ;         (make-procedure (lambda-parameters exp)
-           ;                         (lambda-body exp)
-           ;                         env))
-           ;        ((begin? exp)
-           ;         (eval-sequence (begin-actions exp) env))
-           ;        ((cond? exp) (eval (cond->if exp) env))
-           (proc (apply-in-underlying-scheme proc (list exp env)))
-           ((application? exp)
-            (apply-e (eval (operator exp) env)
-                     (list-of-values (operands exp) env)))
-           (else
-            (error "Unknown expression type --EVAL" exp))))))
-
-  
 (define eval eval-1)
-;(define eval eval-2)
-  
-(define (get-proc exp)
-  (if (tag-of exp) (get (tag-of exp) 'lisp-exp) false))
 
-(define (tag-of exp)
-  (if (pair? exp)
-      (car exp)
-      false))
 
-(put 'quote 'lisp-exp (lambda (exp env) (text-of-quotation exp)))
-(put 'set! 'lisp-exp eval-assignment)
-(put 'define 'lisp-exp eval-definition)
-(put 'if 'lisp-exp eval-if)
-(put 'lambda 'lisp-exp (lambda (exp env)
-                         (make-procedure (lambda-parameters exp)
-                                         (lambda-body exp)
-                                         env)))
-(put 'begin  'lisp-exp (lambda (exp env)
-                         (eval-sequence (begin-actions exp) env)))
-(put 'cond 'lisp-exp (lambda (exp env) (eval (cond->if exp) env)))
 
   
-    
-;Q4.4  eval-and eval-orの実装してくみこめ
-
-;Q4.5 condのもうひとつの構文 (<test> => <recipient>)が評価できるようにせよ
-
-;Q4.6 let式が評価できるよにせよ
-
-;Q4.7 let*->nested-letsをかけ。また、evalに(eval (let*->lets exp) env)を追加するだけでよいか？
-
-;Q4.8 let->combinationを名前付きletがつかえるように拡張せよ
-
-;Q4.9 反復構造を設計し、その使用例を示し、導出された式として実装せよ
-
-;Q4.10 データ抽象を使い、evalとapplyをかえずにSchemeの新しい構文を設計し、実装せよ
-
-
 ;4.1.3 評価器のデータ構造
 ;述語のテスト
 
@@ -475,6 +385,8 @@
   (list (list 'car car)
         (list 'cdr cdr)
         (list '= =)
+        (list '+ +)
+        (list '- -)
         (list 'cons cons)
         (list 'null? null?)))
 
@@ -492,8 +404,8 @@
 
 
 
-(define input-prompt ";; M-Eval input:")
-(define output-prompt ";;; M-Eval value:")
+(define input-prompt ";; L-Eval input:")
+(define output-prompt ";;; L-Eval value:")
 
 (define (driver-loop)
   (prompt-for-input input-prompt)
@@ -520,6 +432,18 @@
 ;起動
 (define the-global-environment (setup-environment))
 (driver-loop)
-;sample (define (append x y) (if (null? x) y (cons (car x)(append (cdr x) y))))
-;sample2 (append '(a b c) '(d e f))
 
+
+;q4.27
+;(define count 0)
+;(define (id x)(set! count (+ count 1))x)
+;(define w (id (id 10)))
+
+;count
+
+;w
+
+;count
+        
+;(define (fib n)(cond ((= n 0) 0)((= n 1) 1)(else (+ (fib (- n 1)) (fib (- n 2))))))
+;25
