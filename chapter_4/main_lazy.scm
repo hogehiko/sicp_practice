@@ -444,6 +444,8 @@
         (list '= =)
         (list '+ +)
         (list '- -)
+        (list '* *)
+        (list '/ /)
         (list 'cons cons)
         (list 'null? null?)))
 
